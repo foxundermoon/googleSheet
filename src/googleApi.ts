@@ -1,17 +1,18 @@
+import { constants } from 'fs';
 import { google } from 'googleapis';
-
+import fs from 'fs';
+import _ from 'lodash';
 
 const credentialsContent = process.env['GOOGLE_CREDENTIALS'];
 if (!credentialsContent) throw new Error(`GOOGLE_CREDENTIALS  env not set`)
 
-
-export class GoogleSheet {
+export class GoogleSheetCfg {
   static credentials = Buffer.from(credentialsContent as string, 'base64').toString();
   static auth = new google.auth.GoogleAuth({
     credentials: JSON.parse(this.credentials),
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
-
+  static spreadsheetId = '1rIdkdYOdVeTrKqc0jIQZSXK52n-YNzbUbcEqErx0M90';
   static googleSheets = google.sheets({ version: 'v4', auth: this.auth });
   static transformData(data: any[][], headerIndex = 0): any[] {
     if (data && data.length > 0) {
@@ -28,26 +29,34 @@ export class GoogleSheet {
       throw new Error(`data empoty ${data}`);
     }
   }
-  static async getSheets(spreadsheetId: string) {
+  static async getSheets() {
     return await this.googleSheets.spreadsheets.get({
-      spreadsheetId: spreadsheetId,
+      spreadsheetId: this.spreadsheetId,
     });
   }
 
-  static async  parseAllSheet<Item>(id: string, headerCol: number) {
-    const data = await this.getSheets(id);
-    // return data.map((x) => {
-    //   const { data }: { data: any[][] } = x as any;
-    //   const columns = <string[]>data[headerCol];
-    //   return data.map((r: any[]) => {
-    //     return <Item>r.reduce((u, v, i) => {
-    //       if (columns[i]) {
-    //         u[columns[i]] = v;
-    //       }
-    //       return u;
-    //     }, {})
-    //   })
-    // });
+  static async getSubscriptions() {
+    const data = await this.googleSheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: 'proxySubList'
+    })
+    return this.transformData(data.data.values as any, 1)
+      .filter(({ url }) => url)
+      .map(({ disabled, excludeLoadbalance, ...rest }) => ({
+        ...rest,
+        disabled: disabled === 'TRUE',
+        excludeLoadbalance: excludeLoadbalance === 'TRUE',
+      })
+      )
+  }
+
+  static async getProxiesOrigin() {
+    const data = await this.googleSheets.spreadsheets.values.get({
+      spreadsheetId: this.spreadsheetId,
+      range: 'proxy'
+    });
+    return this.transformData(data.data.values as any, 1)
+      .filter(({ content, format }) => content && format)
 
   }
 
