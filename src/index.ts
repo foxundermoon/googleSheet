@@ -42,5 +42,13 @@ export class GoogleSheet {
 
   }
 
+  static async getSheetNames(id: string) {
+    const data = await this.googleSheets.spreadsheets.get({
+      spreadsheetId: id,
+      includeGridData: false
+    });
+    return data?.data?.sheets?.map(sheet => sheet?.properties?.title);
+  }
+
 
 }
