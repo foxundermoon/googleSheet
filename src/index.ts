@@ -47,7 +47,7 @@ export class GoogleSheet {
       spreadsheetId: id,
       includeGridData: false
     });
-    return data?.data?.sheets?.map(sheet => sheet?.properties?.title);
+    return data?.data?.sheets?.map(sheet => sheet?.properties?.title) as string[] | undefined;
   }
 
 
