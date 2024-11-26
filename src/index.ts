@@ -2,7 +2,6 @@ import { google } from 'googleapis';
 
 
 const credentialsContent = process.env['GOOGLE_CREDENTIALS'];
-if (!credentialsContent) throw new Error(`GOOGLE_CREDENTIALS  env not set`)
 
 
 export class GoogleSheet {
@@ -30,6 +29,7 @@ export class GoogleSheet {
     }
   }
   static async getSheets(spreadsheetId: string, range: string) {
+    if (!credentialsContent) throw new Error(`GOOGLE_CREDENTIALS  env not set`)
     return await this.googleSheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
       range
@@ -39,7 +39,6 @@ export class GoogleSheet {
   static async parseSheet<Item>(id: string, sheetName: string, headerCol: number) {
     const data = await this.getSheets(id, 'address');
     return this.transformData<Item>(data.data.values, headerCol);
-
   }
 
   static async getSheetNames(id: string) {
@@ -51,4 +50,11 @@ export class GoogleSheet {
   }
 
 
+}
+
+
+export async function getSheetRemote<DT>(id: string, sheetName: string, headerCol: number = 0) {
+
+  const data = await fetch(`https://sheet.fox.mn/api/sheet/${id}?name=${sheetName}&headIndex=${headerCol}`).then(res => res.json());
+  return data as DT[];
 }
