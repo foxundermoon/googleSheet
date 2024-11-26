@@ -13,7 +13,8 @@ export class GoogleSheet {
   });
 
   static googleSheets = google.sheets({ version: 'v4', auth: this.auth });
-  static transformData(data: any[][], headerIndex = 0): any[] {
+  static transformData<DT>(data: any[][] | null | undefined, headerIndex = 0): DT[] {
+    if (!data) return [];
     if (data && data.length > 0) {
       const headers = data[headerIndex];
       const rows = data.slice(headerIndex + 1);
@@ -28,26 +29,16 @@ export class GoogleSheet {
       throw new Error(`data empoty ${data}`);
     }
   }
-  static async getSheets(spreadsheetId: string) {
-    return await this.googleSheets.spreadsheets.get({
+  static async getSheets(spreadsheetId: string, range: string) {
+    return await this.googleSheets.spreadsheets.values.get({
       spreadsheetId: spreadsheetId,
+      range
     });
   }
 
-  static async  parseAllSheet<Item>(id: string, headerCol: number) {
-    const data = await this.getSheets(id);
-    // return data.map((x) => {
-    //   const { data }: { data: any[][] } = x as any;
-    //   const columns = <string[]>data[headerCol];
-    //   return data.map((r: any[]) => {
-    //     return <Item>r.reduce((u, v, i) => {
-    //       if (columns[i]) {
-    //         u[columns[i]] = v;
-    //       }
-    //       return u;
-    //     }, {})
-    //   })
-    // });
+  static async parseSheet<Item>(id: string, sheetName: string, headerCol: number) {
+    const data = await this.getSheets(id, 'address');
+    return this.transformData<Item>(data.data.values, headerCol);
 
   }
 
